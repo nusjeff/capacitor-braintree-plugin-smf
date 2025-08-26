@@ -1,25 +1,11 @@
 var capacitorSMFCapacitorBraintreePlugin = (function (exports, core) {
-    'use strict';
+	'use strict';
 
-    const SMFCapacitorBraintreePlugin = core.registerPlugin('SMFCapacitorBraintreePlugin', {
-        web: () => Promise.resolve().then(function () { return web; }).then((m) => new m.SMFCapacitorBraintreePluginWeb()),
-    });
+	const SMFCapacitorBraintreePlugin = core.registerPlugin('SMFCapacitorBraintreePlugin', {});
 
-    class SMFCapacitorBraintreePluginWeb extends core.WebPlugin {
-        async echo(options) {
-            console.log('ECHO', options);
-            return options;
-        }
-    }
+	exports.SMFCapacitorBraintreePlugin = SMFCapacitorBraintreePlugin;
 
-    var web = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        SMFCapacitorBraintreePluginWeb: SMFCapacitorBraintreePluginWeb
-    });
-
-    exports.SMFCapacitorBraintreePlugin = SMFCapacitorBraintreePlugin;
-
-    return exports;
+	return exports;
 
 })({}, capacitorExports);
 //# sourceMappingURL=plugin.js.map

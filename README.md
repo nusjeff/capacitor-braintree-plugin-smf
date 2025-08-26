@@ -13,24 +13,24 @@ npx cap sync
 
 <docgen-index>
 
-* [`echo(...)`](#echo)
+* [`requestGooglePayPayment(...)`](#requestgooglepaypayment)
 
 </docgen-index>
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
 
-### echo(...)
+### requestGooglePayPayment(...)
 
 ```typescript
-echo(options: { value: string; }) => Promise<{ value: string; }>
+requestGooglePayPayment(options: { amount: string; currencyCode: string; }) => Promise<any>
 ```
 
-| Param         | Type                            |
-| ------------- | ------------------------------- |
-| **`options`** | <code>{ value: string; }</code> |
+| Param         | Type                                                   |
+| ------------- | ------------------------------------------------------ |
+| **`options`** | <code>{ amount: string; currencyCode: string; }</code> |
 
-**Returns:** <code>Promise&lt;{ value: string; }&gt;</code>
+**Returns:** <code>Promise&lt;any&gt;</code>
 
 --------------------
 

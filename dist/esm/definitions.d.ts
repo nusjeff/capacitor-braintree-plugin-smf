@@ -1,7 +1,6 @@
 export interface SMFCapacitorBraintreePluginPlugin {
-    echo(options: {
-        value: string;
-    }): Promise<{
-        value: string;
-    }>;
+    requestGooglePayPayment(options: {
+        amount: string;
+        currencyCode: string;
+    }): Promise<any>;
 }

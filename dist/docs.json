@@ -6,20 +6,20 @@
     "tags": [],
     "methods": [
       {
-        "name": "echo",
-        "signature": "(options: { value: string; }) => Promise<{ value: string; }>",
+        "name": "requestGooglePayPayment",
+        "signature": "(options: { amount: string; currencyCode: string; }) => Promise<any>",
         "parameters": [
           {
             "name": "options",
             "docs": "",
-            "type": "{ value: string; }"
+            "type": "{ amount: string; currencyCode: string; }"
           }
         ],
-        "returns": "Promise<{ value: string; }>",
+        "returns": "Promise<any>",
         "tags": [],
         "docs": "",
         "complexTypes": [],
-        "slug": "echo"
+        "slug": "requestgooglepaypayment"
       }
     ],
     "properties": []
