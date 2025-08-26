@@ -80,7 +80,9 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
                             if (threeDSecureResult instanceof ThreeDSecureResult.Success) {
                                 respondToPlugin(((ThreeDSecureResult.Success) threeDSecureResult).getNonce());
                             } else {
-                                pluginCall.reject("3DS lookup failed");
+                                JSObject resultMap = new JSObject();
+                                resultMap.put("cancelled", true);
+                                pluginCall.resolve(resultMap);
                             }
                         }
                     });
