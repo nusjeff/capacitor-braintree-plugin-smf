@@ -64,5 +64,6 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation("com.braintreepayments.api:google-pay:5.10.0")
     implementation("com.braintreepayments.api:three-d-secure:5.10.0")
+    implementation("com.braintreepayments.api:data-collector:5.10.0")
 
 }

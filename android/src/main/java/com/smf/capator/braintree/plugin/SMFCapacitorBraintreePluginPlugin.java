@@ -4,6 +4,9 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
 import com.braintreepayments.api.core.PostalAddress;
+import com.braintreepayments.api.datacollector.DataCollectorCallback;
+import com.braintreepayments.api.datacollector.DataCollectorRequest;
+import com.braintreepayments.api.datacollector.DataCollectorResult;
 import com.braintreepayments.api.googlepay.GooglePayCardNonce;
 import com.braintreepayments.api.googlepay.GooglePayClient;
 import com.braintreepayments.api.googlepay.GooglePayLauncher;
@@ -21,7 +24,6 @@ import com.braintreepayments.api.threedsecure.ThreeDSecureLauncher;
 import com.braintreepayments.api.threedsecure.ThreeDSecureLauncherCallback;
 import com.braintreepayments.api.threedsecure.ThreeDSecureNonce;
 import com.braintreepayments.api.threedsecure.ThreeDSecurePaymentAuthRequest;
-import com.braintreepayments.api.threedsecure.ThreeDSecurePaymentAuthRequestCallback;
 import com.braintreepayments.api.threedsecure.ThreeDSecurePaymentAuthResult;
 import com.braintreepayments.api.threedsecure.ThreeDSecurePostalAddress;
 import com.braintreepayments.api.threedsecure.ThreeDSecureRequest;
@@ -34,6 +36,8 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.braintreepayments.api.datacollector.DataCollector;
+
 
 @CapacitorPlugin(name = "SMFCapacitorBraintreePlugin")
 public class SMFCapacitorBraintreePluginPlugin extends Plugin {
@@ -44,6 +48,8 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
     ThreeDSecureClient threeDSecureClient;
     ThreeDSecureLauncher threeDSecureLauncher;
     GooglePayCardNonce gCardNonce;
+    DataCollector dataCollector;
+    String deviceData;
 
     @Override
     public void load() {
@@ -89,6 +95,13 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
         String amount = call.getString("amount");
         String currencyCode = call.getString("currencyCode");
         String clientToken = call.getString("clientToken");
+        dataCollector = new DataCollector(activity, clientToken);
+        dataCollector.collectDeviceData(activity, new DataCollectorRequest(false), new DataCollectorCallback() {
+            @Override
+            public void onDataCollectorResult(@NonNull DataCollectorResult dataCollectorResult) {
+                deviceData = ((DataCollectorResult.Success) dataCollectorResult).getDeviceData();
+            }
+        });
         GooglePayRequest googlePayRequest = new GooglePayRequest(currencyCode, amount, GooglePayTotalPriceStatus.TOTAL_PRICE_STATUS_FINAL);
         googlePayRequest.setBillingAddressRequired(true);
 
@@ -138,12 +151,9 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
         ThreeDSecureRequest threeDSecureRequest = build3DSRequest(pluginCall);
         threeDSecureRequest.setNonce(googlePayNonce.getString());
         threeDSecureClient = new ThreeDSecureClient(activity, pluginCall.getString("clientToken"));
-        threeDSecureClient.createPaymentAuthRequest(activity, threeDSecureRequest, new ThreeDSecurePaymentAuthRequestCallback() {
-            @Override
-            public void onThreeDSecurePaymentAuthRequest(@NonNull ThreeDSecurePaymentAuthRequest threeDSecurePaymentAuthRequest) {
-                if (threeDSecurePaymentAuthRequest instanceof ThreeDSecurePaymentAuthRequest.ReadyToLaunch) {
-                    threeDSecureLauncher.launch((ThreeDSecurePaymentAuthRequest.ReadyToLaunch)threeDSecurePaymentAuthRequest);
-                }
+        threeDSecureClient.createPaymentAuthRequest(activity, threeDSecureRequest, threeDSecurePaymentAuthRequest -> {
+            if (threeDSecurePaymentAuthRequest instanceof ThreeDSecurePaymentAuthRequest.ReadyToLaunch) {
+                threeDSecureLauncher.launch((ThreeDSecurePaymentAuthRequest.ReadyToLaunch)threeDSecurePaymentAuthRequest);
             }
         });
 
@@ -152,8 +162,8 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
     private void respondToPlugin(ThreeDSecureNonce threeDNonce) {
         JSObject resultMap = new JSObject();
         resultMap.put("cancelled", false);
-        resultMap.put("nonce", gCardNonce.getString());
-
+        resultMap.put("nonce", threeDNonce == null ? gCardNonce.getString() : threeDNonce.getString());
+        resultMap.put("deviceData", deviceData);
         JSObject innerMap = new JSObject();
         //In network tokenized card case, no tokenized card information returned but this is a Raileasy's required field so I put the nonce here to test if it works
         innerMap.put("token", threeDNonce != null ? threeDNonce.toString() : gCardNonce.toString());
