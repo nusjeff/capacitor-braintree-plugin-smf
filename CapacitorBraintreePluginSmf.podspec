@@ -13,5 +13,8 @@ Pod::Spec.new do |s|
   s.source_files = 'ios/Sources/**/*.{swift,h,m,c,cc,mm,cpp}'
   s.ios.deployment_target = '14.0'
   s.dependency 'Capacitor'
-  s.swift_version = '5.1'
+  s.dependency 'Braintree', '6.37.0'
+  s.dependency 'Braintree/ApplePay', '6.37.0'
+  s.dependency 'Braintree/DataCollector', '6.37.0'
+  s.swift_version = '5.5'
 end

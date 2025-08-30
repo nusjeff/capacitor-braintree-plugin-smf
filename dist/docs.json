@@ -20,6 +20,35 @@
         "docs": "",
         "complexTypes": [],
         "slug": "requestgooglepaypayment"
+      },
+      {
+        "name": "requestApplePayPayment",
+        "signature": "(options: { amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; postalCode?: string; appleMerchantName?: string; }) => Promise<any>",
+        "parameters": [
+          {
+            "name": "options",
+            "docs": "Payment options including amount, currency, client token, and contact information",
+            "type": "{ amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string | undefined; countryCodeAlpha2?: string | undefined; givenName?: string | undefined; surname?: string | undefined; email?: string | undefined; postalCode?: string | undefined; appleMerchantName?: string | undefined; }"
+          }
+        ],
+        "returns": "Promise<any>",
+        "tags": [
+          {
+            "name": "param",
+            "text": "options Payment options including amount, currency, client token, and contact information"
+          },
+          {
+            "name": "returns",
+            "text": "Promise that resolves with payment result or rejects with error"
+          },
+          {
+            "name": "example",
+            "text": "```typescript\nconst result = await SMFCapacitorBraintreePlugin.requestApplePayPayment({\n  amount: \"10.00\",\n  currencyCode: \"USD\",\n  clientToken: \"your_braintree_client_token\",\n  appleMerchantId: \"merchant.com.yourcompany.yourapp\",\n  countryCodeAlpha2: \"US\",\n  givenName: \"Jeff\",\n  surname: \"Trinh\",\n  email: \"jeff@example.com\",\n  postalCode: \"12345\",\n  appleMerchantName: \"SplitMyFare\"\n});\n\n// Result format:\n// {\n//   \"applePay\": {\n//     \"billingContact\": {\n//       \"administrativeArea\": \"AL\",\n//       \"subAdministrativeArea\": \"\",\n//       \"countryCode\": \"US\",\n//       \"familyName\": \"Tr\",\n//       \"addressLines\": [\"Sss\\nAsj\"],\n//       \"locality\": \"HCM\",\n//       \"subLocality\": \"\",\n//       \"givenName\": \"Jeff\",\n//       \"country\": \"United States\",\n//       \"postalCode\": \"12345\"\n//     },\n//     \"shippingContact\": {\n//       \"familyName\": \"\",\n//       \"givenName\": \"\",\n//       \"phoneNumber\": \"+84983111111\",\n//       \"emailAddress\": \"jeff@nustechnology.com\"\n//     }\n//   },\n//   \"cancelled\": false,\n//   \"deviceData\": \"{\\\"correlation_id\\\":\\\"c1f83fb505bd44d79c54b20010ea17cc\\\"}\",\n//   \"nonce\": \"7d17b38c-b908-10e4-1714-a994d93fe896\",\n//   \"localizedDescription\": \"<BTApplePayCardNonce: 0x600000dbc030>\",\n//   \"type\": \"Visa\"\n// }\n```"
+          }
+        ],
+        "docs": "Request Apple Pay payment using Braintree iOS SDK",
+        "complexTypes": [],
+        "slug": "requestapplepaypayment"
       }
     ],
     "properties": []

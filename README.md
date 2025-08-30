@@ -14,6 +14,7 @@ npx cap sync
 <docgen-index>
 
 * [`requestGooglePayPayment(...)`](#requestgooglepaypayment)
+* [`requestApplePayPayment(...)`](#requestapplepaypayment)
 
 </docgen-index>
 
@@ -29,6 +30,23 @@ requestGooglePayPayment(options: { amount: string; currencyCode: string; }) => P
 | Param         | Type                                                   |
 | ------------- | ------------------------------------------------------ |
 | **`options`** | <code>{ amount: string; currencyCode: string; }</code> |
+
+**Returns:** <code>Promise&lt;any&gt;</code>
+
+--------------------
+
+
+### requestApplePayPayment(...)
+
+```typescript
+requestApplePayPayment(options: { amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; postalCode?: string; appleMerchantName?: string; }) => Promise<any>
+```
+
+Request Apple Pay payment using Braintree iOS SDK
+
+| Param         | Type                                                                                                                                                                                                                                     | Description                                                                       |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| **`options`** | <code>{ amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; postalCode?: string; appleMerchantName?: string; }</code> | Payment options including amount, currency, client token, and contact information |
 
 **Returns:** <code>Promise&lt;any&gt;</code>
 
