@@ -56,7 +56,7 @@ import PassKit
         paymentRequest.currencyCode = currencyCode
 
         // Set required billing and shipping contact fields
-        paymentRequest.requiredBillingContactFields = [.postalAddress, .name]
+        paymentRequest.requiredBillingContactFields = [.postalAddress, .name, .emailAddress]
         paymentRequest.requiredShippingContactFields = [.phoneNumber, .emailAddress]
 
         // Create payment summary items
@@ -107,7 +107,8 @@ import PassKit
                     "cancelled": false,
                     "nonce": tokenizedPayment.nonce,
                     "type": tokenizedPayment.type ?? "Unknown",
-                    "localizedDescription": tokenizedPayment.description
+                    "localizedDescription": tokenizedPayment.description,
+                    "emailAddress": ""
                 ]
 
                 if let deviceData = deviceData {
@@ -120,11 +121,13 @@ import PassKit
                 // Billing contact
                 if let billingContact = payment.billingContact {
                     applePayData["billingContact"] = self.formatContact(billingContact)
+                    result["emailAddress"] = billingContact.emailAddress ?? ""
                 }
 
                 // Shipping contact
                 if let shippingContact = payment.shippingContact {
                     applePayData["shippingContact"] = self.formatContact(shippingContact)
+                    result["emailAddress"] = shippingContact.emailAddress ?? ""
                 }
 
                 result["applePay"] = applePayData
