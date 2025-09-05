@@ -104,7 +104,7 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
                 deviceData = ((DataCollectorResult.Success) dataCollectorResult).getDeviceData();
             }
         });
-        GooglePayRequest googlePayRequest = new GooglePayRequest(currencyCode, amount, GooglePayTotalPriceStatus.TOTAL_PRICE_STATUS_FINAL);
+        GooglePayRequest googlePayRequest = new GooglePayRequest(currencyCode, amount, GooglePayTotalPriceStatus.TOTAL_PRICE_STATUS_FINAL, true);
         googlePayRequest.setBillingAddressRequired(true);
 
         googlePayClient = new GooglePayClient(activity, clientToken);
@@ -178,6 +178,7 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
         innerMap.put("shippingAddress", formatAddress(gCardNonce.getShippingAddress()));
         resultMap.put("googlePay", innerMap);
         resultMap.put("localizedDescription", "Android Pay");
+        resultMap.put("emailAddress", gCardNonce.getEmail());
 
         pluginCall.resolve(resultMap);
     }
