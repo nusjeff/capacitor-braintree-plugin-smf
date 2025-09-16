@@ -16,5 +16,6 @@ Pod::Spec.new do |s|
   s.dependency 'Braintree', '6.37.0'
   s.dependency 'Braintree/ApplePay', '6.37.0'
   s.dependency 'Braintree/DataCollector', '6.37.0'
+  s.dependency 'Braintree/ThreeDSecure', '6.37.0'
   s.swift_version = '5.5'
 end

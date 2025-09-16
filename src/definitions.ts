@@ -63,4 +63,98 @@ export interface SMFCapacitorBraintreePluginPlugin {
     postalCode?: string,
     appleMerchantName?: string
   }): Promise<any>;
+
+  /**
+   * iOS only. Perform 3D Secure verification on a card nonce.
+   */
+  perform3DSecureVerification(options: {
+    nonce: string;
+    clientToken: string;
+    amount: string;
+    bin: string;
+    challengeRequested?: boolean;
+    collectDeviceData?: boolean;
+    exemptionRequested?: boolean;
+    email?: string;
+    mobilePhoneNumber?: string;
+    billingAddress?: ThreeDSecureBillingAddress;
+    additionalInformation?: ThreeDSecureAdditionalInformation;
+  }): Promise<{
+    nonce: string;
+    type: string;
+    description: string;
+    binData: ThreeDSecureBinData;
+    liabilityShiftPossible: boolean;
+    liabilityShifted: boolean;
+    threeDSecureInfo: ThreeDSecureInfo;
+  }>;
+}
+
+export interface ThreeDSecureBillingAddress {
+  givenName?: string;
+  surname?: string;
+  phoneNumber?: string;
+  streetAddress?: string;
+  extendedAddress?: string;
+  locality?: string;
+  region?: string;
+  postalCode?: string;
+  countryCodeAlpha2?: string;
+}
+
+export interface ThreeDSecureAdditionalInformation {
+  shippingAddress?: ThreeDSecureBillingAddress;
+  shippingMethodIndicator?: string;
+  productCode?: string;
+  deliveryTimeframe?: string;
+  deliveryEmail?: string;
+  reorderIndicator?: string;
+  preorderIndicator?: string;
+  preorderDate?: string;
+  giftCardAmount?: string;
+  giftCardCurrencyCode?: string;
+  giftCardCount?: string;
+  accountAgeIndicator?: string;
+  accountCreateDate?: string;
+  accountChangeIndicator?: string;
+  accountChangeDate?: string;
+  accountPwdChangeIndicator?: string;
+  accountPwdChangeDate?: string;
+  shippingAddressUsageIndicator?: string;
+  shippingAddressUsageDate?: string;
+  transactionCountDay?: string;
+  transactionCountYear?: string;
+  addCardAttempts?: string;
+  accountPurchases?: string;
+  fraudActivity?: string;
+  shippingNameIndicator?: string;
+  paymentAccountIndicator?: string;
+  paymentAccountAge?: string;
+  addressMatch?: string;
+  installment?: string;
+  recurringEnd?: string;
+  recurringFrequency?: string;
+}
+
+export interface ThreeDSecureBinData {
+  prepaid?: string;
+  healthcare?: string;
+  debit?: string;
+  durbinRegulated?: string;
+  commercial?: string;
+  payroll?: string;
+  issuingBank?: string;
+  countryOfIssuance?: string;
+  productId?: string;
+}
+
+export interface ThreeDSecureInfo {
+  liabilityShiftPossible: boolean;
+  liabilityShifted: boolean;
+  cavv: string;
+  xid: string;
+  dsTransactionId: string;
+  threeDSecureVersion: string;
+  eciFlag: string;
+  threeDSecureAuthenticationId: string;
 }
