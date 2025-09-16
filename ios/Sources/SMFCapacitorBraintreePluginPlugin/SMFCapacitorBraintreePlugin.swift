@@ -69,6 +69,14 @@ import PassKit
         DispatchQueue.main.async {
             threeDSClient.startPaymentFlow(threeDSecureRequest) { result, error in
                 if let error = error {
+                    // Check if the error is due to user cancellation
+                    if let nsError = error as NSError?, nsError.domain == "com.braintreepayments.BTThreeDSecureFlowErrorDomain", nsError.code == 5 {
+                        // User cancelled the 3DS flow
+                        var response: [String: Any] = [:]
+                        response["threeDSecureInfo"] = ["status": "challenge_required"]
+                        completion(response, nil)
+                        return
+                    }
                     completion(nil, error)
                     return
                 }
