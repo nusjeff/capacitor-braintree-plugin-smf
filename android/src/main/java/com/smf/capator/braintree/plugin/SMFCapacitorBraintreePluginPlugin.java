@@ -68,7 +68,6 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
                             }
                         }
                     });
-                    Logger.debug(googlePayPaymentAuthResult.toString());
                 }
             });
             threeDSecureLauncher = new ThreeDSecureLauncher(activity, new ThreeDSecureLauncherCallback() {
@@ -191,6 +190,11 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
         threeDSecureClient.createPaymentAuthRequest(activity, threeDSecureRequest, threeDSecurePaymentAuthRequest -> {
             if (threeDSecurePaymentAuthRequest instanceof ThreeDSecurePaymentAuthRequest.ReadyToLaunch) {
                 threeDSecureLauncher.launch((ThreeDSecurePaymentAuthRequest.ReadyToLaunch)threeDSecurePaymentAuthRequest);
+            } else if (threeDSecurePaymentAuthRequest instanceof ThreeDSecurePaymentAuthRequest.LaunchNotRequired) {
+                ThreeDSecureNonce threeDSecureNonce = ((ThreeDSecurePaymentAuthRequest.LaunchNotRequired) threeDSecurePaymentAuthRequest).getNonce();
+                respondToPlugin(threeDSecureNonce);
+            } else {
+                pluginCall.reject("Cannot launch 3DS request");
             }
         });
 
