@@ -121,15 +121,50 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
         });
     }
 
-    private ThreeDSecureRequest build3DSRequest(PluginCall call) {
+    private ThreeDSecurePostalAddress convertToThreeDSecureAddress(PostalAddress postalAddress) {
         ThreeDSecurePostalAddress address = new ThreeDSecurePostalAddress();
-        address.setGivenName(call.getString("givenName"));
-        address.setSurname(call.getString("surname"));
-        address.setPhoneNumber(call.getString("phoneNumber"));
-        address.setStreetAddress(call.getString("streetAddress"));
-        address.setLocality(call.getString("locality"));
-        address.setPostalCode(call.getString("postalCode"));
-        address.setCountryCodeAlpha2(call.getString("countryCodeAlpha2"));
+        address.setStreetAddress(postalAddress.getStreetAddress());
+        address.setExtendedAddress(postalAddress.getExtendedAddress());
+        address.setLocality(postalAddress.getLocality());
+        address.setRegion(postalAddress.getRegion());
+        address.setPostalCode(postalAddress.getPostalCode());
+        address.setCountryCodeAlpha2(postalAddress.getCountryCodeAlpha2());
+        return address;
+    }
+
+    private ThreeDSecureRequest build3DSRequest(PluginCall call, GooglePayCardNonce googlePayNonce) {
+        ThreeDSecurePostalAddress address;
+        
+        if (googlePayNonce != null && googlePayNonce.getBillingAddress() != null) {
+            // Use billing address from Google Pay
+            address = convertToThreeDSecureAddress(googlePayNonce.getBillingAddress());
+            
+            // Set name from recipient name or fall back to call parameters
+            String recipientName = googlePayNonce.getBillingAddress().getRecipientName();
+            if (recipientName != null && !recipientName.isEmpty()) {
+                // Split the name into given name and surname
+                String[] nameParts = recipientName.split(" ", 2);
+                address.setGivenName(nameParts.length > 0 ? nameParts[0] : "");
+                address.setSurname(nameParts.length > 1 ? nameParts[1] : "");
+            } else {
+                // Fall back to call parameters if no recipient name
+                address.setGivenName(call.getString("givenName"));
+                address.setSurname(call.getString("surname"));
+            }
+            
+            // Use phone number from call parameters since Google Pay doesn't provide it
+            address.setPhoneNumber(call.getString("phoneNumber"));
+        } else {
+            // Fall back to original behavior using call parameters
+            address = new ThreeDSecurePostalAddress();
+            address.setGivenName(call.getString("givenName"));
+            address.setSurname(call.getString("surname"));
+            address.setPhoneNumber(call.getString("phoneNumber"));
+            address.setStreetAddress(call.getString("streetAddress"));
+            address.setLocality(call.getString("locality"));
+            address.setPostalCode(call.getString("postalCode"));
+            address.setCountryCodeAlpha2(call.getString("countryCodeAlpha2"));
+        }
 
         ThreeDSecureAdditionalInformation additionalInformation = new ThreeDSecureAdditionalInformation();
         additionalInformation.setShippingAddress(address);
@@ -150,7 +185,7 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
             return;
         }
 
-        ThreeDSecureRequest threeDSecureRequest = build3DSRequest(pluginCall);
+        ThreeDSecureRequest threeDSecureRequest = build3DSRequest(pluginCall, googlePayNonce);
         threeDSecureRequest.setNonce(googlePayNonce.getString());
         threeDSecureClient = new ThreeDSecureClient(activity, pluginCall.getString("clientToken"));
         threeDSecureClient.createPaymentAuthRequest(activity, threeDSecureRequest, threeDSecurePaymentAuthRequest -> {
