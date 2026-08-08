@@ -1,12 +1,30 @@
-import type { PluginListenerHandle } from "@capacitor/core";
+import type { PluginListenerHandle } from '@capacitor/core';
 export interface ApplePayProgressEvent {
     attemptId: string;
     step: string;
+}
+export interface GooglePayProgressEvent {
+    attemptId: string;
+    step: string;
+    callbackSequence?: number;
+    errorCode?: string;
+    hasDeviceData?: boolean;
+    resultType?: string;
 }
 export interface SMFCapacitorBraintreePluginPlugin {
     requestGooglePayPayment(options: {
         amount: string;
         currencyCode: string;
+        clientToken: string;
+        attemptId?: string;
+        countryCodeAlpha2?: string;
+        givenName?: string;
+        surname?: string;
+        email?: string;
+        phoneNumber?: string;
+        streetAddress?: string;
+        locality?: string;
+        postalCode?: string;
     }): Promise<any>;
     /**
      * Request Apple Pay payment using Braintree iOS SDK
@@ -71,7 +89,8 @@ export interface SMFCapacitorBraintreePluginPlugin {
         appleMerchantName?: string;
         attemptId?: string;
     }): Promise<any>;
-    addListener(eventName: "applePayProgress", listenerFunc: (event: ApplePayProgressEvent) => void): Promise<PluginListenerHandle>;
+    addListener(eventName: 'applePayProgress', listenerFunc: (event: ApplePayProgressEvent) => void): Promise<PluginListenerHandle>;
+    addListener(eventName: 'googlePayProgress', listenerFunc: (event: GooglePayProgressEvent) => void): Promise<PluginListenerHandle>;
     /**
      * iOS only. Perform 3D Secure verification on a card nonce.
      */
