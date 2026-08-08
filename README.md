@@ -16,6 +16,7 @@ npx cap sync
 * [`requestGooglePayPayment(...)`](#requestgooglepaypayment)
 * [`requestApplePayPayment(...)`](#requestapplepaypayment)
 * [`addListener('applePayProgress', ...)`](#addlistenerapplepayprogress-)
+* [`addListener('googlePayProgress', ...)`](#addlistenergooglepayprogress-)
 * [`perform3DSecureVerification(...)`](#perform3dsecureverification)
 * [Interfaces](#interfaces)
 
@@ -27,12 +28,12 @@ npx cap sync
 ### requestGooglePayPayment(...)
 
 ```typescript
-requestGooglePayPayment(options: { amount: string; currencyCode: string; }) => Promise<any>
+requestGooglePayPayment(options: { amount: string; currencyCode: string; clientToken: string; attemptId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; phoneNumber?: string; streetAddress?: string; locality?: string; postalCode?: string; }) => Promise<any>
 ```
 
-| Param         | Type                                                   |
-| ------------- | ------------------------------------------------------ |
-| **`options`** | <code>{ amount: string; currencyCode: string; }</code> |
+| Param         | Type                                                                                                                                                                                                                                                                    |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ amount: string; currencyCode: string; clientToken: string; attemptId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; phoneNumber?: string; streetAddress?: string; locality?: string; postalCode?: string; }</code> |
 
 **Returns:** <code>Promise&lt;any&gt;</code>
 
@@ -59,13 +60,29 @@ Request Apple Pay payment using Braintree iOS SDK
 ### addListener('applePayProgress', ...)
 
 ```typescript
-addListener(eventName: "applePayProgress", listenerFunc: (event: ApplePayProgressEvent) => void) => Promise<PluginListenerHandle>
+addListener(eventName: 'applePayProgress', listenerFunc: (event: ApplePayProgressEvent) => void) => Promise<PluginListenerHandle>
 ```
 
 | Param              | Type                                                                                        |
 | ------------------ | ------------------------------------------------------------------------------------------- |
 | **`eventName`**    | <code>'applePayProgress'</code>                                                             |
 | **`listenerFunc`** | <code>(event: <a href="#applepayprogressevent">ApplePayProgressEvent</a>) =&gt; void</code> |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
+
+--------------------
+
+
+### addListener('googlePayProgress', ...)
+
+```typescript
+addListener(eventName: 'googlePayProgress', listenerFunc: (event: GooglePayProgressEvent) => void) => Promise<PluginListenerHandle>
+```
+
+| Param              | Type                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| **`eventName`**    | <code>'googlePayProgress'</code>                                                              |
+| **`listenerFunc`** | <code>(event: <a href="#googlepayprogressevent">GooglePayProgressEvent</a>) =&gt; void</code> |
 
 **Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
 
@@ -105,6 +122,18 @@ iOS only. Perform 3D Secure verification on a card nonce.
 | --------------- | ------------------- |
 | **`attemptId`** | <code>string</code> |
 | **`step`**      | <code>string</code> |
+
+
+#### GooglePayProgressEvent
+
+| Prop                   | Type                 |
+| ---------------------- | -------------------- |
+| **`attemptId`**        | <code>string</code>  |
+| **`step`**             | <code>string</code>  |
+| **`callbackSequence`** | <code>number</code>  |
+| **`errorCode`**        | <code>string</code>  |
+| **`hasDeviceData`**    | <code>boolean</code> |
+| **`resultType`**       | <code>string</code>  |
 
 
 #### ThreeDSecureBinData

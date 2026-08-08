@@ -7,12 +7,12 @@
     "methods": [
       {
         "name": "requestGooglePayPayment",
-        "signature": "(options: { amount: string; currencyCode: string; }) => Promise<any>",
+        "signature": "(options: { amount: string; currencyCode: string; clientToken: string; attemptId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; phoneNumber?: string; streetAddress?: string; locality?: string; postalCode?: string; }) => Promise<any>",
         "parameters": [
           {
             "name": "options",
             "docs": "",
-            "type": "{ amount: string; currencyCode: string; }"
+            "type": "{ amount: string; currencyCode: string; clientToken: string; attemptId?: string | undefined; countryCodeAlpha2?: string | undefined; givenName?: string | undefined; surname?: string | undefined; email?: string | undefined; phoneNumber?: string | undefined; streetAddress?: string | undefined; locality?: string | undefined; postalCode?: string | undefined; }"
           }
         ],
         "returns": "Promise<any>",
@@ -52,7 +52,7 @@
       },
       {
         "name": "addListener",
-        "signature": "(eventName: \"applePayProgress\", listenerFunc: (event: ApplePayProgressEvent) => void) => Promise<PluginListenerHandle>",
+        "signature": "(eventName: 'applePayProgress', listenerFunc: (event: ApplePayProgressEvent) => void) => Promise<PluginListenerHandle>",
         "parameters": [
           {
             "name": "eventName",
@@ -73,6 +73,30 @@
           "ApplePayProgressEvent"
         ],
         "slug": "addlistenerapplepayprogress-"
+      },
+      {
+        "name": "addListener",
+        "signature": "(eventName: 'googlePayProgress', listenerFunc: (event: GooglePayProgressEvent) => void) => Promise<PluginListenerHandle>",
+        "parameters": [
+          {
+            "name": "eventName",
+            "docs": "",
+            "type": "'googlePayProgress'"
+          },
+          {
+            "name": "listenerFunc",
+            "docs": "",
+            "type": "(event: GooglePayProgressEvent) => void"
+          }
+        ],
+        "returns": "Promise<PluginListenerHandle>",
+        "tags": [],
+        "docs": "",
+        "complexTypes": [
+          "PluginListenerHandle",
+          "GooglePayProgressEvent"
+        ],
+        "slug": "addlistenergooglepayprogress-"
       },
       {
         "name": "perform3DSecureVerification",
@@ -135,6 +159,57 @@
           "docs": "",
           "complexTypes": [],
           "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "GooglePayProgressEvent",
+      "slug": "googlepayprogressevent",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "attemptId",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string"
+        },
+        {
+          "name": "step",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string"
+        },
+        {
+          "name": "callbackSequence",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "number | undefined"
+        },
+        {
+          "name": "errorCode",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string | undefined"
+        },
+        {
+          "name": "hasDeviceData",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "boolean | undefined"
+        },
+        {
+          "name": "resultType",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string | undefined"
         }
       ]
     },
