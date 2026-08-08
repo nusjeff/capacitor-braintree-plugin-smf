@@ -27,6 +27,7 @@ public class SMFCapacitorBraintreePluginPlugin: CAPPlugin, CAPBridgedPlugin {
         let postalCode = call.getString("postalCode")
         let countryCodeAlpha2 = call.getString("countryCodeAlpha2")
         let appleMerchantName = call.getString("appleMerchantName") ?? "SplitMyFare"
+        let attemptId = call.getString("attemptId") ?? "unknown"
 
         // Validate required parameters
         guard !amount.isEmpty else {
@@ -58,16 +59,29 @@ public class SMFCapacitorBraintreePluginPlugin: CAPPlugin, CAPBridgedPlugin {
             "appleMerchantName": appleMerchantName
         ]
 
-        // Call the implementation
-        implementation.requestApplePayPayment(
-            options: options
-        ) { response, error in
-            if let error = error {
-                call.reject("Apple Pay failed: \(error.localizedDescription)")
-            } else if let response = response {
-                call.resolve(response)
-            } else {
-                call.reject("Apple Pay failed: Unknown error")
+        // Capacitor invokes plugin methods on its bridge queue. PassKit presentation
+        // must be created and presented on the main queue.
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else {
+                call.reject("Apple Pay failed: Plugin unavailable")
+                return
+            }
+            self.implementation.requestApplePayPayment(
+                options: options,
+                progress: { [weak self] step in
+                    self?.notifyListeners("applePayProgress", data: [
+                        "attemptId": attemptId,
+                        "step": step
+                    ])
+                }
+            ) { response, error in
+                if let error = error {
+                    call.reject("Apple Pay failed: \(error.localizedDescription)")
+                } else if let response = response {
+                    call.resolve(response)
+                } else {
+                    call.reject("Apple Pay failed: Unknown error")
+                }
             }
         }
     }

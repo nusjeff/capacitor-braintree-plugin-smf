@@ -15,6 +15,7 @@ npx cap sync
 
 * [`requestGooglePayPayment(...)`](#requestgooglepaypayment)
 * [`requestApplePayPayment(...)`](#requestapplepaypayment)
+* [`addListener('applePayProgress', ...)`](#addlistenerapplepayprogress-)
 * [`perform3DSecureVerification(...)`](#perform3dsecureverification)
 * [Interfaces](#interfaces)
 
@@ -41,16 +42,32 @@ requestGooglePayPayment(options: { amount: string; currencyCode: string; }) => P
 ### requestApplePayPayment(...)
 
 ```typescript
-requestApplePayPayment(options: { amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; postalCode?: string; appleMerchantName?: string; }) => Promise<any>
+requestApplePayPayment(options: { amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; postalCode?: string; appleMerchantName?: string; attemptId?: string; }) => Promise<any>
 ```
 
 Request Apple Pay payment using Braintree iOS SDK
 
-| Param         | Type                                                                                                                                                                                                                                     | Description                                                                       |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| **`options`** | <code>{ amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; postalCode?: string; appleMerchantName?: string; }</code> | Payment options including amount, currency, client token, and contact information |
+| Param         | Type                                                                                                                                                                                                                                                         | Description                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| **`options`** | <code>{ amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; postalCode?: string; appleMerchantName?: string; attemptId?: string; }</code> | Payment options including amount, currency, client token, and contact information |
 
 **Returns:** <code>Promise&lt;any&gt;</code>
+
+--------------------
+
+
+### addListener('applePayProgress', ...)
+
+```typescript
+addListener(eventName: "applePayProgress", listenerFunc: (event: ApplePayProgressEvent) => void) => Promise<PluginListenerHandle>
+```
+
+| Param              | Type                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| **`eventName`**    | <code>'applePayProgress'</code>                                                             |
+| **`listenerFunc`** | <code>(event: <a href="#applepayprogressevent">ApplePayProgressEvent</a>) =&gt; void</code> |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
 
 --------------------
 
@@ -73,6 +90,21 @@ iOS only. Perform 3D Secure verification on a card nonce.
 
 
 ### Interfaces
+
+
+#### PluginListenerHandle
+
+| Prop         | Type                                      |
+| ------------ | ----------------------------------------- |
+| **`remove`** | <code>() =&gt; Promise&lt;void&gt;</code> |
+
+
+#### ApplePayProgressEvent
+
+| Prop            | Type                |
+| --------------- | ------------------- |
+| **`attemptId`** | <code>string</code> |
+| **`step`**      | <code>string</code> |
 
 
 #### ThreeDSecureBinData

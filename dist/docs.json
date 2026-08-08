@@ -23,12 +23,12 @@
       },
       {
         "name": "requestApplePayPayment",
-        "signature": "(options: { amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; postalCode?: string; appleMerchantName?: string; }) => Promise<any>",
+        "signature": "(options: { amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; postalCode?: string; appleMerchantName?: string; attemptId?: string; }) => Promise<any>",
         "parameters": [
           {
             "name": "options",
             "docs": "Payment options including amount, currency, client token, and contact information",
-            "type": "{ amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string | undefined; countryCodeAlpha2?: string | undefined; givenName?: string | undefined; surname?: string | undefined; email?: string | undefined; postalCode?: string | undefined; appleMerchantName?: string | undefined; }"
+            "type": "{ amount: string; currencyCode: string; clientToken: string; appleMerchantId?: string | undefined; countryCodeAlpha2?: string | undefined; givenName?: string | undefined; surname?: string | undefined; email?: string | undefined; postalCode?: string | undefined; appleMerchantName?: string | undefined; attemptId?: string | undefined; }"
           }
         ],
         "returns": "Promise<any>",
@@ -49,6 +49,30 @@
         "docs": "Request Apple Pay payment using Braintree iOS SDK",
         "complexTypes": [],
         "slug": "requestapplepaypayment"
+      },
+      {
+        "name": "addListener",
+        "signature": "(eventName: \"applePayProgress\", listenerFunc: (event: ApplePayProgressEvent) => void) => Promise<PluginListenerHandle>",
+        "parameters": [
+          {
+            "name": "eventName",
+            "docs": "",
+            "type": "'applePayProgress'"
+          },
+          {
+            "name": "listenerFunc",
+            "docs": "",
+            "type": "(event: ApplePayProgressEvent) => void"
+          }
+        ],
+        "returns": "Promise<PluginListenerHandle>",
+        "tags": [],
+        "docs": "",
+        "complexTypes": [
+          "PluginListenerHandle",
+          "ApplePayProgressEvent"
+        ],
+        "slug": "addlistenerapplepayprogress-"
       },
       {
         "name": "perform3DSecureVerification",
@@ -75,6 +99,45 @@
     "properties": []
   },
   "interfaces": [
+    {
+      "name": "PluginListenerHandle",
+      "slug": "pluginlistenerhandle",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "remove",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "() => Promise<void>"
+        }
+      ]
+    },
+    {
+      "name": "ApplePayProgressEvent",
+      "slug": "applepayprogressevent",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "attemptId",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string"
+        },
+        {
+          "name": "step",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string"
+        }
+      ]
+    },
     {
       "name": "ThreeDSecureBinData",
       "slug": "threedsecurebindata",
