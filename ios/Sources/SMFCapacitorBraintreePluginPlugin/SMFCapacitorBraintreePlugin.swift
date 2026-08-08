@@ -8,8 +8,13 @@ import PassKit
     private var applePayClient: BTApplePayClient?
     private var dataCollector: BTDataCollector?
     private var completionHandler: (([String: Any]?, Error?) -> Void)? = nil
+    private var progressHandler: ((String) -> Void)? = nil
     private var paymentController: PKPaymentAuthorizationController?
     private var isCompleted = false
+    private var isAuthorizing = false
+    private var collectedDeviceData: String?
+    private var presentationTimeoutWorkItem: DispatchWorkItem?
+    private var authorizationTimeoutWorkItem: DispatchWorkItem?
     private var threeDSecureClient: BTThreeDSecureClient?
 
     @objc public func echo(_ value: String) -> String {
@@ -145,8 +150,21 @@ import PassKit
 
     @objc public func requestApplePayPayment(
         options: [String: Any],
+        progress: @escaping (String) -> Void,
         completion: @escaping ([String: Any]?, Error?) -> Void
     ) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { [weak self] in
+                self?.requestApplePayPayment(options: options, progress: progress, completion: completion)
+            }
+            return
+        }
+
+        guard completionHandler == nil else {
+            completion(nil, NSError(domain: "ApplePayError", code: 6, userInfo: [NSLocalizedDescriptionKey: "An Apple Pay payment is already in progress"]))
+            return
+        }
+
         // Extract parameters from options dictionary
         let amount = options["amount"] as! String
         let currencyCode = options["currencyCode"] as! String
@@ -161,18 +179,26 @@ import PassKit
         let appleMerchantName = options["appleMerchantName"] as? String
 
         self.completionHandler = completion
+        self.progressHandler = progress
         self.isCompleted = false
+        self.isAuthorizing = false
+        self.collectedDeviceData = nil
+        emitProgress("native_request_received")
 
         // Initialize Braintree clients
         braintreeClient = BTAPIClient(authorization: clientToken)
         applePayClient = BTApplePayClient(apiClient: braintreeClient!)
         dataCollector = BTDataCollector(apiClient: braintreeClient!)
+        emitProgress("clients_initialized")
+        collectDeviceData()
 
         // Check if Apple Pay is available
         guard PKPaymentAuthorizationController.canMakePayments() else {
-            completion(nil, NSError(domain: "ApplePayError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Apple Pay is not available on this device"]))
+            emitProgress("availability_failed")
+            callCompletionHandler(.failure(NSError(domain: "ApplePayError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Apple Pay is not available on this device"])))
             return
         }
+        emitProgress("availability_succeeded")
 
         // Create payment request
         let paymentRequest = PKPaymentRequest()
@@ -194,42 +220,73 @@ import PassKit
         // Create and present payment authorization controller
         paymentController = PKPaymentAuthorizationController(paymentRequest: paymentRequest)
         paymentController?.delegate = self
-        paymentController?.present { presented in
+        emitProgress("presentation_started")
+
+        let presentationTimeout = DispatchWorkItem { [weak self] in
+            guard let self = self, !self.isCompleted else { return }
+            self.emitProgress("presentation_timed_out")
+            self.paymentController?.dismiss()
+            self.callCompletionHandler(.failure(NSError(domain: "ApplePayError", code: 5, userInfo: [NSLocalizedDescriptionKey: "Apple Pay presentation timed out"])))
+        }
+        presentationTimeoutWorkItem = presentationTimeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: presentationTimeout)
+
+        paymentController?.present { [weak self] presented in
+            guard let self = self else { return }
+            self.presentationTimeoutWorkItem?.cancel()
+            self.presentationTimeoutWorkItem = nil
             if !presented {
-                completion(nil, NSError(domain: "ApplePayError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to present Apple Pay"]))
+                self.emitProgress("presentation_failed")
+                self.callCompletionHandler(.failure(NSError(domain: "ApplePayError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to present Apple Pay"])))
+                return
             }
+            self.emitProgress("presentation_succeeded")
         }
     }
 
     private func collectDeviceData() {
-        dataCollector?.collectDeviceData { deviceData, error in
-            if let error = error {
-                print("Error collecting device data: \(error)")
+        emitProgress("device_data_started")
+        dataCollector?.collectDeviceData { [weak self] deviceData, error in
+            DispatchQueue.main.async {
+                guard let self = self, !self.isCompleted else { return }
+                if let deviceData = deviceData {
+                    self.collectedDeviceData = deviceData
+                    self.emitProgress("device_data_succeeded")
+                } else {
+                    self.emitProgress("device_data_failed")
+                    if let error = error {
+                        print("Error collecting device data: \(error)")
+                    }
+                }
             }
         }
     }
 
-    private func tokenizeApplePayPayment(_ payment: PKPayment) {
+    private func tokenizeApplePayPayment(
+        _ payment: PKPayment,
+        completion: @escaping (Result<[String: Any], Error>) -> Void
+    ) {
         guard let applePayClient = applePayClient else {
-            callCompletionHandler(.failure(NSError(domain: "ApplePayError", code: 3, userInfo: [NSLocalizedDescriptionKey: "Apple Pay client not initialized"])))
+            completion(.failure(NSError(domain: "ApplePayError", code: 3, userInfo: [NSLocalizedDescriptionKey: "Apple Pay client not initialized"])))
             return
         }
+        emitProgress("tokenization_started")
         applePayClient.tokenize(payment) { [weak self] tokenizedPayment, error in
+            DispatchQueue.main.async {
+                guard let self = self, !self.isCompleted else { return }
 
-            guard let self = self else { return }
+                if let error = error {
+                    self.emitProgress("tokenization_failed")
+                    completion(.failure(error))
+                    return
+                }
 
-            if let error = error {
-                self.callCompletionHandler(.failure(error))
-                return
-            }
+                guard let tokenizedPayment = tokenizedPayment else {
+                    self.emitProgress("tokenization_failed")
+                    completion(.failure(NSError(domain: "ApplePayError", code: 4, userInfo: [NSLocalizedDescriptionKey: "Failed to tokenize Apple Pay payment"])))
+                    return
+                }
 
-            guard let tokenizedPayment = tokenizedPayment else {
-                self.callCompletionHandler(.failure(NSError(domain: "ApplePayError", code: 4, userInfo: [NSLocalizedDescriptionKey: "Failed to tokenize Apple Pay payment"])))
-                return
-            }
-
-            // Collect device data
-            self.dataCollector?.collectDeviceData { deviceData, error in
                 var result: [String: Any] = [
                     "cancelled": false,
                     "nonce": tokenizedPayment.nonce,
@@ -238,7 +295,7 @@ import PassKit
                     "emailAddress": ""
                 ]
 
-                if let deviceData = deviceData {
+                if let deviceData = self.collectedDeviceData {
                     result["deviceData"] = deviceData
                 }
 
@@ -259,7 +316,8 @@ import PassKit
 
                 result["applePay"] = applePayData
 
-                self.callCompletionHandler(.success(result))
+                self.emitProgress("tokenization_succeeded")
+                completion(.success(result))
             }
         }
     }
@@ -319,6 +377,7 @@ import PassKit
     }
 
     private func handlePaymentCancellation() {
+        emitProgress("payment_cancelled")
         let result: [String: Any] = [
             "cancelled": true,
             "nonce": "",
@@ -333,12 +392,26 @@ import PassKit
     private func callCompletionHandler(_ result: Result<[String: Any], Error>) {
         guard !isCompleted else { return }
         isCompleted = true
+        isAuthorizing = false
+        presentationTimeoutWorkItem?.cancel()
+        presentationTimeoutWorkItem = nil
+        authorizationTimeoutWorkItem?.cancel()
+        authorizationTimeoutWorkItem = nil
+        let completion = completionHandler
+        completionHandler = nil
         switch result {
         case .success(let data):
-            completionHandler!(data, nil)
+            emitProgress(data["cancelled"] as? Bool == true ? "bridge_resolved_cancelled" : "bridge_resolved_success")
+            completion?(data, nil)
         case .failure(let error):
-            completionHandler!(nil, error)
+            emitProgress("bridge_rejected")
+            completion?(nil, error)
         }
+        progressHandler = nil
+    }
+
+    private func emitProgress(_ step: String) {
+        progressHandler?(step)
     }
 }
 
@@ -355,15 +428,44 @@ extension SMFCapacitorBraintreePlugin: BTThreeDSecureRequestDelegate {
 extension SMFCapacitorBraintreePlugin: PKPaymentAuthorizationControllerDelegate {
 
     public func paymentAuthorizationController(_ controller: PKPaymentAuthorizationController, didAuthorizePayment payment: PKPayment, handler completion: @escaping (PKPaymentAuthorizationResult) -> Void) {
-        // Tokenize the payment
-        tokenizeApplePayPayment(payment)
-        completion(PKPaymentAuthorizationResult(status: .success, errors: nil))
+        isAuthorizing = true
+        emitProgress("authorization_started")
+
+        let authorizationTimeout = DispatchWorkItem { [weak self] in
+            guard let self = self, !self.isCompleted else { return }
+            let error = NSError(domain: "ApplePayError", code: 7, userInfo: [NSLocalizedDescriptionKey: "Apple Pay tokenization timed out"])
+            self.emitProgress("authorization_timed_out")
+            self.callCompletionHandler(.failure(error))
+            completion(PKPaymentAuthorizationResult(status: .failure, errors: [error]))
+        }
+        authorizationTimeoutWorkItem = authorizationTimeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 45, execute: authorizationTimeout)
+
+        tokenizeApplePayPayment(payment) { [weak self] result in
+            guard let self = self, !self.isCompleted else { return }
+            self.authorizationTimeoutWorkItem?.cancel()
+            self.authorizationTimeoutWorkItem = nil
+
+            switch result {
+            case .success(let data):
+                self.emitProgress("authorization_succeeded")
+                self.callCompletionHandler(.success(data))
+                completion(PKPaymentAuthorizationResult(status: .success, errors: nil))
+            case .failure(let error):
+                self.emitProgress("authorization_failed")
+                self.callCompletionHandler(.failure(error))
+                completion(PKPaymentAuthorizationResult(status: .failure, errors: [error]))
+            }
+        }
     }
 
     public func paymentAuthorizationControllerDidFinish(_ controller: PKPaymentAuthorizationController) {
-        controller.dismiss()
-        // If we haven't called the completion handler yet, it means the user cancelled
-        if !isCompleted {
+        emitProgress("sheet_dismissed")
+        controller.dismiss { [weak self] in
+            self?.paymentController = nil
+        }
+        // No authorization means the user closed the sheet before approving payment.
+        if !isCompleted && !isAuthorizing {
             handlePaymentCancellation()
         }
     }
