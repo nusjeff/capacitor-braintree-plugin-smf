@@ -1,3 +1,8 @@
+import type { PluginListenerHandle } from "@capacitor/core";
+export interface ApplePayProgressEvent {
+    attemptId: string;
+    step: string;
+}
 export interface SMFCapacitorBraintreePluginPlugin {
     requestGooglePayPayment(options: {
         amount: string;
@@ -64,7 +69,9 @@ export interface SMFCapacitorBraintreePluginPlugin {
         email?: string;
         postalCode?: string;
         appleMerchantName?: string;
+        attemptId?: string;
     }): Promise<any>;
+    addListener(eventName: "applePayProgress", listenerFunc: (event: ApplePayProgressEvent) => void): Promise<PluginListenerHandle>;
     /**
      * iOS only. Perform 3D Secure verification on a card nonce.
      */
