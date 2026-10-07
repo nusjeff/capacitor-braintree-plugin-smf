@@ -1,5 +1,11 @@
 import type { PluginListenerHandle } from '@capacitor/core';
 export interface ApplePayProgressEvent {
+    phase?: "preparing" | "presenting" | "presented" | "tokenizing" | "dismissing" | "finished";
+    appActive?: boolean;
+    windowReady?: boolean;
+    presenterBusy?: boolean;
+    pluginRevision?: string;
+    braintreeVersion?: string;
     attemptId: string;
     step: string;
 }
@@ -12,6 +18,26 @@ export interface GooglePayProgressEvent {
     resultType?: string;
 }
 export interface SMFCapacitorBraintreePluginPlugin {
+    /** iOS only. Checks whether Wallet has a card accepted by this merchant. */
+    getApplePayAvailability(options: {
+        clientToken: string;
+    }): Promise<{
+        available: boolean;
+    }>;
+    /** iOS only. Returns the identity and phase of the active native sheet. */
+    getApplePayStatus(): Promise<{
+        active: boolean;
+        attemptId?: string;
+        phase?: string;
+    }>;
+    /** iOS only. Cancels the matching attempt before approval; never cancels tokenization. */
+    cancelApplePayPayment(options: {
+        attemptId: string;
+    }): Promise<{
+        accepted: boolean;
+        active: boolean;
+        phase?: string;
+    }>;
     requestGooglePayPayment(options: {
         amount: string;
         currencyCode: string;

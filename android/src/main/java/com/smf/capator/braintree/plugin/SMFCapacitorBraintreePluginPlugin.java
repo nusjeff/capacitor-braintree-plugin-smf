@@ -9,6 +9,7 @@ import com.braintreepayments.api.datacollector.DataCollectorRequest;
 import com.braintreepayments.api.datacollector.DataCollectorResult;
 import com.braintreepayments.api.googlepay.GooglePayCardNonce;
 import com.braintreepayments.api.googlepay.GooglePayClient;
+import com.braintreepayments.api.googlepay.GooglePayException;
 import com.braintreepayments.api.googlepay.GooglePayLauncher;
 import com.braintreepayments.api.googlepay.GooglePayLauncherCallback;
 import com.braintreepayments.api.googlepay.GooglePayPaymentAuthRequest;
@@ -35,6 +36,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.google.android.gms.common.api.Status;
 import java.util.UUID;
 
 @CapacitorPlugin(name = "SMFCapacitorBraintreePlugin")
@@ -188,6 +190,7 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
             true
         );
         googlePayRequest.setBillingAddressRequired(true);
+        googlePayRequest.setCountryCode(call.getString("countryCodeAlpha2"));
 
         attempt.googlePayClient.createPaymentAuthRequest(
             googlePayRequest,
@@ -349,7 +352,24 @@ public class SMFCapacitorBraintreePluginPlugin extends Plugin {
         notifyFailure(attempt, "plugin_call_rejected", errorCode);
         clearActiveAttempt(attempt);
         String message = error.getMessage() == null ? "Native payment failed" : error.getMessage();
-        attempt.call.reject(message, errorCode, error);
+        JSObject details = new JSObject();
+        details.put("nativeErrorDomain", error.getClass().getSimpleName());
+        // Braintree returns sheet failures through tokenize(), before any nonce exists.
+        boolean sheetFailure = error instanceof GooglePayException;
+        String failureStage = sheetFailure ? "presentation" :
+            errorCode.startsWith("THREE_DS") ? "three_ds" :
+            "GOOGLE_PAY_AUTH_REQUEST_FAILED".equals(errorCode) ? "configuration" : "tokenization";
+        details.put("failureStage", failureStage);
+        details.put("failureKind", errorCode);
+        if (sheetFailure) {
+            Status status = ((GooglePayException) error).getStatus();
+            if (status != null) {
+                details.put("nativeErrorCode", status.getStatusCode());
+                details.put("nativeErrorMessage", status.getStatusMessage());
+                details.put("failureKind", "GOOGLE_PAY_STATUS_" + status.getStatusCode());
+            }
+        }
+        attempt.call.reject(message, errorCode, error, details);
     }
 
     private void notifyResultReceived(GooglePayAttempt attempt, String step, Object result) {
