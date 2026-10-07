@@ -13,6 +13,9 @@ npx cap sync
 
 <docgen-index>
 
+* [`getApplePayAvailability(...)`](#getapplepayavailability)
+* [`getApplePayStatus()`](#getapplepaystatus)
+* [`cancelApplePayPayment(...)`](#cancelapplepaypayment)
 * [`requestGooglePayPayment(...)`](#requestgooglepaypayment)
 * [`requestApplePayPayment(...)`](#requestapplepaypayment)
 * [`addListener('applePayProgress', ...)`](#addlistenerapplepayprogress-)
@@ -24,6 +27,53 @@ npx cap sync
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
+
+### getApplePayAvailability(...)
+
+```typescript
+getApplePayAvailability(options: { clientToken: string; }) => Promise<{ available: boolean; }>
+```
+
+iOS only. Checks whether Wallet has a card accepted by this merchant.
+
+| Param         | Type                                  |
+| ------------- | ------------------------------------- |
+| **`options`** | <code>{ clientToken: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ available: boolean; }&gt;</code>
+
+--------------------
+
+
+### getApplePayStatus()
+
+```typescript
+getApplePayStatus() => Promise<{ active: boolean; attemptId?: string; phase?: string; }>
+```
+
+iOS only. Returns the identity and phase of the active native sheet.
+
+**Returns:** <code>Promise&lt;{ active: boolean; attemptId?: string; phase?: string; }&gt;</code>
+
+--------------------
+
+
+### cancelApplePayPayment(...)
+
+```typescript
+cancelApplePayPayment(options: { attemptId: string; }) => Promise<{ accepted: boolean; active: boolean; phase?: string; }>
+```
+
+iOS only. Cancels the matching attempt before approval; never cancels tokenization.
+
+| Param         | Type                                |
+| ------------- | ----------------------------------- |
+| **`options`** | <code>{ attemptId: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ accepted: boolean; active: boolean; phase?: string; }&gt;</code>
+
+--------------------
+
 
 ### requestGooglePayPayment(...)
 
@@ -118,10 +168,16 @@ iOS only. Perform 3D Secure verification on a card nonce.
 
 #### ApplePayProgressEvent
 
-| Prop            | Type                |
-| --------------- | ------------------- |
-| **`attemptId`** | <code>string</code> |
-| **`step`**      | <code>string</code> |
+| Prop                   | Type                                                                                                  |
+| ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| **`phase`**            | <code>'preparing' \| 'presenting' \| 'presented' \| 'tokenizing' \| 'dismissing' \| 'finished'</code> |
+| **`appActive`**        | <code>boolean</code>                                                                                  |
+| **`windowReady`**      | <code>boolean</code>                                                                                  |
+| **`presenterBusy`**    | <code>boolean</code>                                                                                  |
+| **`pluginRevision`**   | <code>string</code>                                                                                   |
+| **`braintreeVersion`** | <code>string</code>                                                                                   |
+| **`attemptId`**        | <code>string</code>                                                                                   |
+| **`step`**             | <code>string</code>                                                                                   |
 
 
 #### GooglePayProgressEvent

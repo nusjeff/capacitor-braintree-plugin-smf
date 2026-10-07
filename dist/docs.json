@@ -6,6 +6,48 @@
     "tags": [],
     "methods": [
       {
+        "name": "getApplePayAvailability",
+        "signature": "(options: { clientToken: string; }) => Promise<{ available: boolean; }>",
+        "parameters": [
+          {
+            "name": "options",
+            "docs": "",
+            "type": "{ clientToken: string; }"
+          }
+        ],
+        "returns": "Promise<{ available: boolean; }>",
+        "tags": [],
+        "docs": "iOS only. Checks whether Wallet has a card accepted by this merchant.",
+        "complexTypes": [],
+        "slug": "getapplepayavailability"
+      },
+      {
+        "name": "getApplePayStatus",
+        "signature": "() => Promise<{ active: boolean; attemptId?: string; phase?: string; }>",
+        "parameters": [],
+        "returns": "Promise<{ active: boolean; attemptId?: string | undefined; phase?: string | undefined; }>",
+        "tags": [],
+        "docs": "iOS only. Returns the identity and phase of the active native sheet.",
+        "complexTypes": [],
+        "slug": "getapplepaystatus"
+      },
+      {
+        "name": "cancelApplePayPayment",
+        "signature": "(options: { attemptId: string; }) => Promise<{ accepted: boolean; active: boolean; phase?: string; }>",
+        "parameters": [
+          {
+            "name": "options",
+            "docs": "",
+            "type": "{ attemptId: string; }"
+          }
+        ],
+        "returns": "Promise<{ accepted: boolean; active: boolean; phase?: string | undefined; }>",
+        "tags": [],
+        "docs": "iOS only. Cancels the matching attempt before approval; never cancels tokenization.",
+        "complexTypes": [],
+        "slug": "cancelapplepaypayment"
+      },
+      {
         "name": "requestGooglePayPayment",
         "signature": "(options: { amount: string; currencyCode: string; clientToken: string; attemptId?: string; countryCodeAlpha2?: string; givenName?: string; surname?: string; email?: string; phoneNumber?: string; streetAddress?: string; locality?: string; postalCode?: string; }) => Promise<any>",
         "parameters": [
@@ -146,6 +188,48 @@
       "tags": [],
       "methods": [],
       "properties": [
+        {
+          "name": "phase",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "'preparing' | 'presenting' | 'presented' | 'tokenizing' | 'dismissing' | 'finished' | undefined"
+        },
+        {
+          "name": "appActive",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "boolean | undefined"
+        },
+        {
+          "name": "windowReady",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "boolean | undefined"
+        },
+        {
+          "name": "presenterBusy",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "boolean | undefined"
+        },
+        {
+          "name": "pluginRevision",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string | undefined"
+        },
+        {
+          "name": "braintreeVersion",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string | undefined"
+        },
         {
           "name": "attemptId",
           "tags": [],

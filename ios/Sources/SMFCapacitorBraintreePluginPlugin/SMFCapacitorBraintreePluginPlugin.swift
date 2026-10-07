@@ -1,5 +1,8 @@
 import Foundation
 import Capacitor
+import UIKit
+import PassKit
+import Braintree
 
 /**
  * Please read the Capacitor iOS Plugin Development Guide
@@ -11,78 +14,122 @@ public class SMFCapacitorBraintreePluginPlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "SMFCapacitorBraintreePlugin"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "requestApplePayPayment", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getApplePayAvailability", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getApplePayStatus", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "cancelApplePayPayment", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "perform3DSecureVerification", returnType: CAPPluginReturnPromise)
     ]
     private let implementation = SMFCapacitorBraintreePlugin()
 
-    @objc func requestApplePayPayment(_ call: CAPPluginCall) {
-        let amount = call.getString("amount") ?? ""
-        let currencyCode = call.getString("currencyCode") ?? ""
-        let clientToken = call.getString("clientToken") ?? ""
-        let merchantIdentifier = call.getString("appleMerchantId") ?? "merchant.com.yourcompany.yourapp"
-        let countryCode = call.getString("countryCodeAlpha2") ?? "UK"
-        let givenName = call.getString("givenName")
-        let surname = call.getString("surname")
-        let email = call.getString("email")
-        let postalCode = call.getString("postalCode")
-        let countryCodeAlpha2 = call.getString("countryCodeAlpha2")
-        let appleMerchantName = call.getString("appleMerchantName") ?? "SplitMyFare"
-        let attemptId = call.getString("attemptId") ?? "unknown"
+    // Card 3DS and Apple Pay own separate clients; each Apple Pay attempt owns
+    // its callbacks, and remains retained until the native sheet is dismissed.
+    private var applePaySession: ApplePaySession?
 
-        // Validate required parameters
-        guard !amount.isEmpty else {
-            call.reject("Amount is required")
-            return
+    @objc func getApplePayStatus(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            if let session = self.applePaySession {
+                call.resolve(["active": true, "attemptId": session.attemptId, "phase": session.phase])
+            } else {
+                call.resolve(["active": false])
+            }
         }
+    }
 
-        guard !currencyCode.isEmpty else {
-            call.reject("Currency code is required")
-            return
-        }
-
-        guard !clientToken.isEmpty else {
-            call.reject("Client token is required")
-            return
-        }
-
-        let options: [String: Any] = [
-            "amount": amount,
-            "currencyCode": currencyCode,
-            "clientToken": clientToken,
-            "merchantIdentifier": merchantIdentifier,
-            "countryCode": countryCode,
-            "givenName": givenName ?? "",
-            "surname": surname ?? "",
-            "email": email ?? "",
-            "postalCode": postalCode ?? "",
-            "countryCodeAlpha2": countryCodeAlpha2 ?? "",
-            "appleMerchantName": appleMerchantName
-        ]
-
-        // Capacitor invokes plugin methods on its bridge queue. PassKit presentation
-        // must be created and presented on the main queue.
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else {
-                call.reject("Apple Pay failed: Plugin unavailable")
+    @objc func cancelApplePayPayment(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard let attemptId = call.getString("attemptId"),
+                  let session = self.applePaySession, session.attemptId == attemptId else {
+                call.resolve(["accepted": false, "active": self.applePaySession != nil])
                 return
             }
-            self.implementation.requestApplePayPayment(
-                options: options,
-                progress: { [weak self] step in
-                    self?.notifyListeners("applePayProgress", data: [
-                        "attemptId": attemptId,
-                        "step": step
-                    ])
-                }
-            ) { response, error in
-                if let error = error {
-                    call.reject("Apple Pay failed: \(error.localizedDescription)")
-                } else if let response = response {
-                    call.resolve(response)
-                } else {
-                    call.reject("Apple Pay failed: Unknown error")
+            let accepted = session.cancel()
+            call.resolve(["accepted": accepted, "active": self.applePaySession != nil, "phase": session.phase])
+        }
+    }
+
+    @objc func getApplePayAvailability(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            guard PKPaymentAuthorizationController.canMakePayments() else {
+                call.resolve(["available": false])
+                return
+            }
+            guard let client = BTAPIClient(authorization: call.getString("clientToken") ?? "") else {
+                call.reject("Invalid client token", "APPLE_PAY_INVALID_REQUEST")
+                return
+            }
+            let applePayClient = BTApplePayClient(apiClient: client)
+            applePayClient.makePaymentRequest { request, error in
+                DispatchQueue.main.async {
+                    guard let request = request else {
+                        let native = error as NSError?
+                        call.reject("Apple Pay configuration unavailable", "APPLE_PAY_CONFIGURATION_FAILED", error,
+                            ["failureStage": "configuration", "failureKind": "gateway_fetch",
+                             "nativeErrorDomain": native?.domain ?? "ApplePayError", "nativeErrorCode": native?.code ?? 8])
+                        return
+                    }
+                    let available = PKPaymentAuthorizationController.canMakePayments(
+                        usingNetworks: request.supportedNetworks, capabilities: .capability3DS)
+                    call.resolve(["available": available])
                 }
             }
+        }
+    }
+
+    @objc func requestApplePayPayment(_ call: CAPPluginCall) {
+        let options: [String: Any] = [
+            "attemptId": call.getString("attemptId") ?? "unknown",
+            "amount": call.getString("amount") ?? "",
+            "currencyCode": call.getString("currencyCode") ?? "",
+            "clientToken": call.getString("clientToken") ?? "",
+            "merchantIdentifier": call.getString("appleMerchantId") ?? "",
+            "countryCode": call.getString("countryCodeAlpha2") ?? "",
+            "appleMerchantName": call.getString("appleMerchantName") ?? "SplitMyFare"
+        ]
+        let attemptId = call.getString("attemptId") ?? "unknown"
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else {
+                call.reject("Apple Pay failed: Plugin unavailable", "APPLE_PAY_UNAVAILABLE")
+                return
+            }
+            if let activeSession = self.applePaySession {
+                call.reject("Apple Pay failed: Payment already in progress", "APPLE_PAY_BUSY", nil,
+                    ["activeAttemptId": activeSession.attemptId, "phase": activeSession.phase,
+                     "failureStage": "concurrency", "failureKind": "busy"])
+                return
+            }
+            guard let presenter = self.bridge?.viewController,
+                  let window = presenter.viewIfLoaded?.window else {
+                call.reject("Apple Pay failed: Presentation window unavailable", "APPLE_PAY_CONTEXT_UNAVAILABLE", nil,
+                    ["failureStage": "presentation", "failureKind": "context_unavailable"])
+                return
+            }
+            let session = ApplePaySession(options: options, window: window, presenter: presenter,
+                progress: { [weak self] step, details in
+                    var data = details
+                    data["attemptId"] = attemptId
+                    data["step"] = step
+                    self?.notifyListeners("applePayProgress", data: data)
+                }, completion: { [weak self] response, error in
+                    self?.applePaySession = nil
+                    if let error = error {
+                        let nativeError = error as NSError
+                        let codes = [1: "APPLE_PAY_UNAVAILABLE", 2: "APPLE_PAY_PRESENTATION_FAILED",
+                                     5: "APPLE_PAY_PRESENTATION_TIMEOUT", 7: "APPLE_PAY_TOKENIZATION_TIMEOUT",
+                                     8: "APPLE_PAY_INVALID_REQUEST", 9: "APPLE_PAY_CONTEXT_UNAVAILABLE",
+                                     11: "APPLE_PAY_CONFIGURATION_TIMEOUT",
+                                     12: "APPLE_PAY_CONFIGURATION_MISMATCH"]
+                        let stage = nativeError.userInfo["failureStage"] as? String ?? "unknown"
+                        let code = nativeError.domain == "ApplePayError" ? (codes[nativeError.code] ?? "APPLE_PAY_FAILED") :
+                            (stage == "configuration" ? "APPLE_PAY_CONFIGURATION_FAILED" : "APPLE_PAY_TOKENIZATION_FAILED")
+                        call.reject("Apple Pay failed: \(error.localizedDescription)", code, error,
+                            ["nativeErrorDomain": nativeError.domain, "nativeErrorCode": nativeError.code,
+                             "failureStage": stage, "failureKind": code])
+                    } else {
+                        call.resolve(response ?? ["cancelled": true])
+                    }
+                })
+            self.applePaySession = session
+            session.start()
         }
     }
 
