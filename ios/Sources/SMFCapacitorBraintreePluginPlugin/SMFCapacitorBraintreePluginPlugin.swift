@@ -48,30 +48,9 @@ public class SMFCapacitorBraintreePluginPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func getApplePayAvailability(_ call: CAPPluginCall) {
+        // Only device support gates the button; the Apple Pay sheet handles adding an eligible card.
         DispatchQueue.main.async {
-            guard PKPaymentAuthorizationController.canMakePayments() else {
-                call.resolve(["available": false])
-                return
-            }
-            guard let client = BTAPIClient(authorization: call.getString("clientToken") ?? "") else {
-                call.reject("Invalid client token", "APPLE_PAY_INVALID_REQUEST")
-                return
-            }
-            let applePayClient = BTApplePayClient(apiClient: client)
-            applePayClient.makePaymentRequest { request, error in
-                DispatchQueue.main.async {
-                    guard let request = request else {
-                        let native = error as NSError?
-                        call.reject("Apple Pay configuration unavailable", "APPLE_PAY_CONFIGURATION_FAILED", error,
-                            ["failureStage": "configuration", "failureKind": "gateway_fetch",
-                             "nativeErrorDomain": native?.domain ?? "ApplePayError", "nativeErrorCode": native?.code ?? 8])
-                        return
-                    }
-                    let available = PKPaymentAuthorizationController.canMakePayments(
-                        usingNetworks: request.supportedNetworks, capabilities: .capability3DS)
-                    call.resolve(["available": available])
-                }
-            }
+            call.resolve(["available": PKPaymentAuthorizationController.canMakePayments()])
         }
     }
 

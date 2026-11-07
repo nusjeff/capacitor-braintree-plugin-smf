@@ -113,9 +113,11 @@ final class ApplePaySession: NSObject, PKPaymentAuthorizationControllerDelegate 
                 }
                 self.presentationTimeout?.cancel()
                 request.merchantCapabilities = .capability3DS
+                // The payment sheet cannot add cards, so send people without an eligible card to Wallet setup.
                 guard PKPaymentAuthorizationController.canMakePayments(usingNetworks: request.supportedNetworks, capabilities: request.merchantCapabilities) else {
-                    self.emit("availability_failed", ["eligibleCard": false])
-                    self.finish(nil, self.error(1, "No supported Apple Pay card is available"), stage: "availability")
+                    self.emit("payment_setup_opened", ["eligibleCard": false])
+                    PKPassLibrary().openPaymentSetup()
+                    self.finish(["cancelled": true, "setupRequired": true], nil)
                     return
                 }
                 self.emit("availability_succeeded", ["eligibleCard": true])
