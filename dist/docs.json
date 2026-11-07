@@ -17,7 +17,7 @@
         ],
         "returns": "Promise<{ available: boolean; }>",
         "tags": [],
-        "docs": "iOS only. Checks whether Wallet has a card accepted by this merchant.",
+        "docs": "iOS only. Checks whether this device supports Apple Pay (a Wallet card is not required).",
         "complexTypes": [],
         "slug": "getapplepayavailability"
       },
@@ -81,7 +81,7 @@
           },
           {
             "name": "returns",
-            "text": "Promise that resolves with payment result or rejects with error"
+            "text": "Promise that resolves with payment result or rejects with error.\nWithout an eligible Wallet card it opens Wallet setup and resolves `{ cancelled: true, setupRequired: true }`."
           },
           {
             "name": "example",

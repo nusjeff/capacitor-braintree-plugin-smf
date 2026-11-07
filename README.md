@@ -34,7 +34,7 @@ npx cap sync
 getApplePayAvailability(options: { clientToken: string; }) => Promise<{ available: boolean; }>
 ```
 
-iOS only. Checks whether Wallet has a card accepted by this merchant.
+iOS only. Checks whether this device supports Apple Pay (a Wallet card is not required).
 
 | Param         | Type                                  |
 | ------------- | ------------------------------------- |

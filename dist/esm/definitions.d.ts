@@ -18,7 +18,7 @@ export interface GooglePayProgressEvent {
     resultType?: string;
 }
 export interface SMFCapacitorBraintreePluginPlugin {
-    /** iOS only. Checks whether Wallet has a card accepted by this merchant. */
+    /** iOS only. Checks whether this device supports Apple Pay (a Wallet card is not required). */
     getApplePayAvailability(options: {
         clientToken: string;
     }): Promise<{
@@ -55,7 +55,8 @@ export interface SMFCapacitorBraintreePluginPlugin {
     /**
      * Request Apple Pay payment using Braintree iOS SDK
      * @param options Payment options including amount, currency, client token, and contact information
-     * @returns Promise that resolves with payment result or rejects with error
+     * @returns Promise that resolves with payment result or rejects with error.
+     * Without an eligible Wallet card it opens Wallet setup and resolves `{ cancelled: true, setupRequired: true }`.
      *
      * @example
      * ```typescript
